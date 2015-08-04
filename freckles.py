@@ -10,6 +10,8 @@ import json
 from time import time
 import images2gif
 
+# Code written by mandarine & f.reckl ! es
+# Do whatever the hell you want with it
 
 UP_DIR = '/var/www/freckles/uimgs/'
 UP_NAME = 'image.jpg'
