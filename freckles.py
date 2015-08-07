@@ -1,6 +1,5 @@
 from cgi import parse_qsl, FieldStorage
 from wsgiref.simple_server import make_server
-from PIL import Image
 from tempfile import mkstemp
 from random import randint
 import os
@@ -8,7 +7,6 @@ import jinja2
 from base64 import b64decode
 import json
 from time import time
-import images2gif
 import mimetypes
 import shutil
 
