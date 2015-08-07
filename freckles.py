@@ -9,6 +9,8 @@ from base64 import b64decode
 import json
 from time import time
 import images2gif
+import mimetypes
+import shutil
 
 # Code written by mandarine & f.reckl ! es
 # Do whatever the hell you want with it
@@ -22,9 +24,10 @@ EXP_MAX = 201
 EXP_DEF = 13
 
 TPL_PATH = '/var/www/freckles/templates'
+DEFAULT_CTYPE = 'application/octet-stream'
 
 EXTENSIONS = {"JPEG": (".jpg", "image/jpeg"),
-              "PNG": (".png", "image/png"), 
+              "PNG": (".png", "image/png"),
               "GIF": (".gif", "image/gif")}
 
 def get_path(number, suffix = ".jpg"):
@@ -46,13 +49,14 @@ def get_image(number):
         with open(meta_path, 'r') as meta_file:
             metadata = json.load(meta_file)
             if 'type' in metadata:
-                extension = EXTENSIONS[metadata['type']][0]
-                ctype = EXTENSIONS[metadata['type']][1]
+                ctype = metadata['type'].encode()
+            if 'ext' in metadata:
+                extension = metadata['ext']
             if 'countdown' in metadata:
                 countdown = metadata['countdown']
     except:
         pass
-    
+
     temp_path = get_path(number, extension)
     try:
         with open(temp_path, 'r') as img_file:
@@ -71,7 +75,7 @@ def get_image(number):
             metadata['countdown'] = countdown
             with open(meta_path, 'w') as meta_file:
                 json.dump(metadata, meta_file)
-    
+
     ret = "200 OK"
     return ret, ctype, content, []
 
@@ -130,23 +134,19 @@ def application(environ, start_response):
 
         img_id = randint(1, NUM_IMG)
         ret, ctype, content, headers = redirect('/%s' % (img_id))
+
         try:
-            img = Image.open(image_file)
-            img_type = img.format
-            metadata['type'] = img_type
-            img_extension = EXTENSIONS[img_type][0]
-
-            if img_type == "GIF":
-                # PIL do not handle animations
-                frames = images2gif.readGif(image_file, False)
-                images2gif.writeGif(get_path(img_id, img_extension), frames)
-            else:
-                img.save(get_path(img_id, img_extension), img_type)
-
-            with open(get_path(img_id, ".json"), 'w') as meta_file:
-                json.dump(metadata, meta_file)
-
-            img.close()
+            _, img_extension = os.path.splitext(fileitem.filename)
+            print "lol"
+            print img_extension
+            img_extension = img_extension.lower()
+            metadata['ext'] = img_extension
+            metadata['type'] = mimetypes.types_map.get(img_extension, DEFAULT_CTYPE)
+            if metadata['type'] != DEFAULT_CTYPE:
+                new_path = get_path(img_id, img_extension)
+                shutil.copy(image_file, new_path)
+                with open(get_path(img_id, ".json"), 'w') as meta_file:
+                    json.dump(metadata, meta_file)
         except:
             raise
 
@@ -157,4 +157,3 @@ if __name__=='__main__':
     httpd = make_server('', 8080, application)
     print("Serving on port 8080...")
     httpd.serve_forever()
-
