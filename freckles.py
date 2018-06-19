@@ -1,5 +1,6 @@
 from cgi import parse_qsl, FieldStorage
 from wsgiref.simple_server import make_server
+from PIL import Image
 from tempfile import mkstemp
 from random import randint
 import os
@@ -25,7 +26,7 @@ TPL_PATH = '/var/www/freckles/templates'
 DEFAULT_CTYPE = 'application/octet-stream'
 
 EXTENSIONS = {"JPEG": (".jpg", "image/jpeg"),
-              "PNG": (".png", "image/png"),
+              "PNG": (".png", "image/png"), 
               "GIF": (".gif", "image/gif")}
 
 def get_path(number, suffix = ".jpg"):
@@ -47,7 +48,7 @@ def get_image(number):
         with open(meta_path, 'r') as meta_file:
             metadata = json.load(meta_file)
             if 'type' in metadata:
-                ctype = metadata['type'].encode()
+                ctype = metadata['type']
             if 'ext' in metadata:
                 extension = metadata['ext']
             if 'countdown' in metadata:
@@ -57,7 +58,7 @@ def get_image(number):
 
     temp_path = get_path(number, extension)
     try:
-        with open(temp_path, 'r') as img_file:
+        with open(temp_path, 'rb') as img_file:
             content = img_file.read()
     except:
         ctype = 'image/gif'
@@ -135,8 +136,6 @@ def application(environ, start_response):
 
         try:
             _, img_extension = os.path.splitext(fileitem.filename)
-            print "lol"
-            print img_extension
             img_extension = img_extension.lower()
             metadata['ext'] = img_extension
             metadata['type'] = mimetypes.types_map.get(img_extension, DEFAULT_CTYPE)
@@ -155,3 +154,4 @@ if __name__=='__main__':
     httpd = make_server('', 8080, application)
     print("Serving on port 8080...")
     httpd.serve_forever()
+
